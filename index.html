@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <title>Puzles de mates</title>
+  <title>Puzles de Matemáticas</title>
   <style>
     body{
       font-family: Arial, sans-serif;
@@ -46,7 +46,7 @@
       font-size:12px;
     }
     th,td{
-      border:1px solid #000;
+      border:2px solid #000;
       padding:4px;
       text-align:center;
     }
@@ -59,10 +59,15 @@
       font-size:0.8rem;
       color:#555;
     }
+    .btn-print{
+      margin-left:10px;
+    }
     @media print{
       body{ margin:0; }
       .config{ display:none; }
-      #preview{ border:none; }
+      #preview{ border:none; padding:0; }
+      table td{ font-size:18px !important; }
+      img{ max-width:100%; }
     }
   </style>
 </head>
@@ -87,13 +92,16 @@
   <div style="flex:1 1 100%;">
     <label>Operaciones (separadas por espacio):</label>
     <textarea id="opsInput"
-      placeholder="Ejemplo: 100-18 100-76 25+3 7*8 (20+5)*2"></textarea>
+      placeholder="Ejemplo: 5+3 7+2 4+6 9+1 8+2 3+5 ..."></textarea>
     <div class="small-note">
       Se admiten + - * /, paréntesis, x · : y decimales con coma o punto.
     </div>
   </div>
 
-  <button id="generateBtn">Generar ficha</button>
+  <div>
+    <button id="generateBtn">Generar ficha</button>
+    <button class="btn-print" onclick="window.print()">Imprimir (puzle + solución)</button>
+  </div>
 </div>
 
 <div id="preview"></div>
@@ -114,7 +122,10 @@ imgInput.addEventListener('change', e=>{
   const reader = new FileReader();
   reader.onload = function(ev){
     const img = new Image();
-    img.onload = ()=>{ loadedImage = img; alert("Imagen cargada correctamente"); };
+    img.onload = ()=>{
+      loadedImage = img;
+      alert("Imagen cargada correctamente");
+    };
     img.src = ev.target.result;
   };
   reader.readAsDataURL(file);
@@ -123,12 +134,10 @@ imgInput.addEventListener('change', e=>{
 // Normalizar y calcular una operación
 function computeOp(opStr){
   let expr = opStr.trim();
-  // reemplazos
   expr = expr.replace(/x|X|·/g, '*');
   expr = expr.replace(/:/g, '/');
   expr = expr.replace(/,/g, '.');
 
-  // pequeña protección: solo números, operadores y paréntesis
   if(!/^[0-9+\-*/().\s]+$/.test(expr)){
     throw new Error("Carácter no permitido en operación: " + opStr);
   }
@@ -161,6 +170,15 @@ function sliceImage(img, rows, cols){
     }
   }
   return pieces;
+}
+
+// Mezclar piezas y resultados a la vez
+function shufflePuzzle(pieces, results){
+  for(let i = pieces.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [pieces[i], pieces[j]] = [pieces[j], pieces[i]];
+    [results[i], results[j]] = [results[j], results[i]];
+  }
 }
 
 generateBtn.addEventListener('click', ()=>{
@@ -196,8 +214,12 @@ generateBtn.addEventListener('click', ()=>{
 
   const pieces = sliceImage(loadedImage, rows, cols);
 
+  // Mezclar orden de piezas y resultados
+  shufflePuzzle(pieces, results);
+
   preview.innerHTML = ""; // limpiar
 
+  // --- HOJA 1: FICHA DEL ALUMNO (operaciones + puzle mezclado) ---
   const sheet = document.createElement('div');
   sheet.className = 'sheet';
 
@@ -230,15 +252,21 @@ generateBtn.addEventListener('click', ()=>{
     const tr = document.createElement('tr');
     for(let c=0; c<cols; c++){
       const td = document.createElement('td');
+      td.style.position = "relative";
+
       const img = document.createElement('img');
       img.src = pieces[idx];
+
       const num = document.createElement('div');
-      num.textContent = results[idx]; // número sobre la pieza
-      num.style.position = "relative";
-      num.style.marginTop = "-1.2em";
-      num.style.fontSize = "10px";
+      num.textContent = results[idx];
+      num.style.fontSize = "32px";
       num.style.fontWeight = "bold";
-      num.style.textAlign = "center";
+      num.style.color = "red";
+      num.style.position = "absolute";
+      num.style.top = "50%";
+      num.style.left = "50%";
+      num.style.transform = "translate(-50%, -50%)";
+
       td.appendChild(img);
       td.appendChild(num);
       tr.appendChild(td);
@@ -250,6 +278,42 @@ generateBtn.addEventListener('click', ()=>{
   sheet.appendChild(opTable);
   sheet.appendChild(puzzleTable);
   preview.appendChild(sheet);
+
+  // --- HOJA 2: SOLUCIÓN (imagen completa + tabla de resultados) ---
+  const solutionSheet = document.createElement('div');
+  solutionSheet.className = 'sheet';
+  solutionSheet.style.pageBreakBefore = "always";
+
+  // columna izquierda: imagen completa
+  const fullImgContainer = document.createElement('div');
+  const fullImg = document.createElement('img');
+  fullImg.src = loadedImage.src;
+  fullImg.style.width = "100%";
+  fullImg.style.border = "1px solid black";
+  fullImgContainer.appendChild(fullImg);
+
+  // columna derecha: tabla de resultados
+  const solTable = document.createElement('table');
+  const header = document.createElement('tr');
+  header.innerHTML = '<th colspan="'+cols+'">SOLUCIÓN - Resultados</th>';
+  solTable.appendChild(header);
+
+  let k = 0;
+  for(let r=0; r<rows; r++){
+    const tr = document.createElement('tr');
+    for(let c=0; c<cols; c++){
+      const td = document.createElement('td');
+      td.textContent = results[k++];
+      td.style.fontSize = "20px";
+      td.style.fontWeight = "bold";
+      tr.appendChild(td);
+    }
+    solTable.appendChild(tr);
+  }
+
+  solutionSheet.appendChild(fullImgContainer);
+  solutionSheet.appendChild(solTable);
+  preview.appendChild(solutionSheet);
 
   const note = document.createElement('p');
   note.className = "small-note";
