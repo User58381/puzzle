@@ -176,13 +176,26 @@ function sliceImage(img, rows, cols){
   return pieces;
 }
 
-// Mezclar piezas y resultados a la vez
-function shufflePuzzle(pieces, results){
-  for(let i = pieces.length - 1; i > 0; i--){
+// Mezclar array genérico (para las celdas)
+function shuffleArray(arr){
+  for(let i = arr.length - 1; i > 0; i--){
     const j = Math.floor(Math.random() * (i + 1));
-    [pieces[i], pieces[j]] = [pieces[j], pieces[i]];
-    [results[i], results[j]] = [results[j], results[i]];
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
+}
+
+// Aplica estilo "blanco con contorno negro" a los números
+function styleNumber(div){
+  div.style.fontSize = "32px";
+  div.style.fontWeight = "bold";
+  div.style.color = "white";
+  div.style.position = "absolute";
+  div.style.top = "50%";
+  div.style.left = "50%";
+  div.style.transform = "translate(-50%, -50%)";
+  // contorno negro con sombra
+  div.style.textShadow =
+    "-1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black, 1px 1px 2px black";
 }
 
 // Igualar alturas de filas entre tabla de operaciones y puzle (solo tbody)
@@ -245,6 +258,7 @@ generateBtn.addEventListener('click', ()=>{
     return;
   }
 
+  // Resultados en el orden original de las operaciones
   let results = [];
   try{
     results = ops.map(computeOp);
@@ -255,8 +269,20 @@ generateBtn.addEventListener('click', ()=>{
 
   const pieces = sliceImage(loadedImage, rows, cols);
 
-  // Mezclar orden de piezas y resultados
-  shufflePuzzle(pieces, results);
+  // Estructura que mantiene vínculo operación–resultado–pieza
+  const total = expected;
+  const cells = [];
+  for(let i=0; i<total; i++){
+    cells.push({
+      op: ops[i],
+      result: results[i],
+      piece: pieces[i]
+    });
+  }
+
+  // Versión mezclada para el puzle del alumno
+  const shuffled = cells.slice();
+  shuffleArray(shuffled);
 
   preview.innerHTML = ""; // limpiar
 
@@ -264,7 +290,7 @@ generateBtn.addEventListener('click', ()=>{
   const sheet = document.createElement('div');
   sheet.className = 'sheet';
 
-  // Tabla de operaciones
+  // Tabla de operaciones (en orden original)
   const opTable = document.createElement('table');
   const opThead = document.createElement('thead');
   const opHeadRow = document.createElement('tr');
@@ -278,14 +304,15 @@ generateBtn.addEventListener('click', ()=>{
     const tr = document.createElement('tr');
     for(let c=0; c<cols; c++){
       const td = document.createElement('td');
-      td.textContent = ops[idx++];
+      td.textContent = cells[idx].op;
       tr.appendChild(td);
+      idx++;
     }
     opTbody.appendChild(tr);
   }
   opTable.appendChild(opTbody);
 
-  // Tabla de puzle
+  // Tabla de puzle MEZCLADA
   const puzzleTable = document.createElement('table');
   puzzleTable.className = 'puzzle-table';
   const pThead = document.createElement('thead');
@@ -299,21 +326,16 @@ generateBtn.addEventListener('click', ()=>{
   for(let r=0; r<rows; r++){
     const tr = document.createElement('tr');
     for(let c=0; c<cols; c++){
+      const cell = shuffled[idx];
       const td = document.createElement('td');
       td.style.position = "relative";
 
       const img = document.createElement('img');
-      img.src = pieces[idx];
+      img.src = cell.piece;
 
       const num = document.createElement('div');
-      num.textContent = results[idx];
-      num.style.fontSize = "32px";
-      num.style.fontWeight = "bold";
-      num.style.color = "red";
-      num.style.position = "absolute";
-      num.style.top = "50%";
-      num.style.left = "50%";
-      num.style.transform = "translate(-50%, -50%)";
+      num.textContent = cell.result;
+      styleNumber(num);
 
       td.appendChild(img);
       td.appendChild(num);
@@ -331,43 +353,44 @@ generateBtn.addEventListener('click', ()=>{
   // Sincronizar alturas de filas (después de cargar imágenes)
   syncWhenImagesReady(opTable, puzzleTable);
 
-  // --- HOJA 2: SOLUCIÓN (imagen completa + tabla de resultados) ---
+  // --- HOJA 2: SOLUCIÓN (imagen armada con números en su lugar) ---
   const solutionSheet = document.createElement('div');
   solutionSheet.className = 'sheet';
-  solutionSheet.style.pageBreakBefore = "always";
+  solutionSheet.style.gridTemplateColumns = '1fr'; // solo una columna, ancho completo
 
-  // columna izquierda: imagen completa
-  const fullImgContainer = document.createElement('div');
-  const fullImg = document.createElement('img');
-  fullImg.src = loadedImage.src;
-  fullImg.style.width = "100%";
-  fullImg.style.border = "1px solid black";
-  fullImgContainer.appendChild(fullImg);
-
-  // columna derecha: tabla de resultados
   const solTable = document.createElement('table');
-  const header = document.createElement('thead');
-  const hRow = document.createElement('tr');
-  hRow.innerHTML = '<th colspan="'+cols+'">SOLUCIÓN - Resultados</th>';
-  header.appendChild(hRow);
-  solTable.appendChild(header);
+  solTable.className = 'puzzle-table';
+  const sThead = document.createElement('thead');
+  const sHeadRow = document.createElement('tr');
+  sHeadRow.innerHTML = '<th colspan="'+cols+'">SOLUCIÓN - Imagen armada</th>';
+  sThead.appendChild(sHeadRow);
+  solTable.appendChild(sThead);
 
-  const solBody = document.createElement('tbody');
+  const sTbody = document.createElement('tbody');
   let k = 0;
   for(let r=0; r<rows; r++){
     const tr = document.createElement('tr');
     for(let c=0; c<cols; c++){
+      const cell = cells[k]; // SIN MEZCLAR: imagen armada correcta
       const td = document.createElement('td');
-      td.textContent = results[k++];
-      td.style.fontSize = "20px";
-      td.style.fontWeight = "bold";
-      tr.appendChild(td);
-    }
-    solBody.appendChild(tr);
-  }
-  solTable.appendChild(solBody);
+      td.style.position = "relative";
 
-  solutionSheet.appendChild(fullImgContainer);
+      const img = document.createElement('img');
+      img.src = cell.piece;
+
+      const num = document.createElement('div');
+      num.textContent = cell.result;
+      styleNumber(num);
+
+      td.appendChild(img);
+      td.appendChild(num);
+      tr.appendChild(td);
+      k++;
+    }
+    sTbody.appendChild(tr);
+  }
+  solTable.appendChild(sTbody);
+
   solutionSheet.appendChild(solTable);
   preview.appendChild(solutionSheet);
 
