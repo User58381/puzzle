@@ -133,7 +133,7 @@ const pdfBtn     = document.getElementById('pdfBtn');
 
 let loadedImage = null;
 
-// Cargar imagen en memoria
+// Cargar imagen
 imgInput.addEventListener('change', e=>{
   const file = e.target.files[0];
   if(!file) return;
@@ -162,10 +162,10 @@ function computeOp(opStr){
 
   const fn = new Function("return ("+expr+")");
   const val = fn();
-  return Math.round((val + Number.EPSILON) * 100) / 100; // 2 decimales
+  return Math.round((val + Number.EPSILON) * 100) / 100;
 }
 
-// Corta la imagen en piezas y devuelve array de dataURLs
+// Cortar imagen en piezas
 function sliceImage(img, rows, cols){
   const tileWidth  = img.width / cols;
   const tileHeight = img.height / rows;
@@ -190,7 +190,7 @@ function sliceImage(img, rows, cols){
   return pieces;
 }
 
-// Mezclar array genérico (para las celdas)
+// Mezclar array
 function shuffleArray(arr){
   for(let i = arr.length - 1; i > 0; i--){
     const j = Math.floor(Math.random() * (i + 1));
@@ -198,7 +198,7 @@ function shuffleArray(arr){
   }
 }
 
-// Estilo "número blanco con contorno negro"
+// Número blanco con contorno negro
 function styleNumber(div){
   div.style.fontSize = "32px";
   div.style.fontWeight = "bold";
@@ -234,7 +234,6 @@ generateBtn.addEventListener('click', ()=>{
     return;
   }
 
-  // Resultados en el orden original de las operaciones
   let results = [];
   try{
     results = ops.map(computeOp);
@@ -245,7 +244,6 @@ generateBtn.addEventListener('click', ()=>{
 
   const pieces = sliceImage(loadedImage, rows, cols);
 
-  // Estructura que mantiene vínculo operación–resultado–pieza
   const total = expected;
   const cells = [];
   for(let i=0; i<total; i++){
@@ -256,13 +254,12 @@ generateBtn.addEventListener('click', ()=>{
     });
   }
 
-  // Versión mezclada para el puzzle del alumno
   const shuffled = cells.slice();
   shuffleArray(shuffled);
 
-  preview.innerHTML = ""; // limpiar
+  preview.innerHTML = "";
 
-  // --- HOJA 1: FICHA DEL ALUMNO (tabla única: operaciones + puzzle) ---
+  // HOJA 1: tabla única (operaciones + puzzle)
   const sheet1 = document.createElement('div');
   sheet1.className = 'sheet';
 
@@ -284,23 +281,23 @@ generateBtn.addEventListener('click', ()=>{
   mainTable.appendChild(thead);
 
   const tbody = document.createElement('tbody');
-  let idxShuffled = 0;
-  let idxCells    = 0;
+  let idxOps = 0;
+  let idxSh  = 0;
 
   for(let r=0; r<rows; r++){
     const tr = document.createElement('tr');
 
-    // celdas de operaciones (orden original)
+    // columnas de operaciones
     for(let c=0; c<cols; c++){
       const td = document.createElement('td');
-      td.textContent = cells[idxCells].op;
+      td.textContent = cells[idxOps].op;
       tr.appendChild(td);
-      idxCells++;
+      idxOps++;
     }
 
-    // celdas de puzzle (mezcladas)
+    // columnas de puzzle
     for(let c=0; c<cols; c++){
-      const cell = shuffled[idxShuffled];
+      const cell = shuffled[idxSh];
       const td = document.createElement('td');
       td.style.position = "relative";
 
@@ -314,7 +311,7 @@ generateBtn.addEventListener('click', ()=>{
       td.appendChild(img);
       td.appendChild(num);
       tr.appendChild(td);
-      idxShuffled++;
+      idxSh++;
     }
 
     tbody.appendChild(tr);
@@ -324,7 +321,7 @@ generateBtn.addEventListener('click', ()=>{
   sheet1.appendChild(mainTable);
   preview.appendChild(sheet1);
 
-  // --- HOJA 2: SOLUCIÓN (imagen armada con números en su lugar) ---
+  // HOJA 2: solución (solo puzzle armado)
   const sheet2 = document.createElement('div');
   sheet2.className = 'sheet';
 
@@ -345,7 +342,7 @@ generateBtn.addEventListener('click', ()=>{
   for(let r=0; r<rows; r++){
     const tr = document.createElement('tr');
     for(let c=0; c<cols; c++){
-      const cell = cells[k]; // imagen en su lugar correcto
+      const cell = cells[k];
       const td = document.createElement('td');
       td.style.position = "relative";
 
@@ -373,7 +370,7 @@ generateBtn.addEventListener('click', ()=>{
   preview.appendChild(note);
 });
 
-// Botón para generar PDF directo (puzzle + solución)
+// PDF
 pdfBtn.addEventListener('click', ()=>{
   if(!preview.firstChild){
     alert("Primero genera un puzzle antes de descargar el PDF.");
