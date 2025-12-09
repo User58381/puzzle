@@ -36,7 +36,7 @@
     }
     .sheet{
       display:grid;
-      grid-template-columns:1fr 1fr; /* MISMO ANCHO PARA OPERACIONES Y PUZLE */
+      grid-template-columns:1fr 1fr; /* mismo ancho para operaciones y puzle */
       gap:10px;
       page-break-after:always;
     }
@@ -49,6 +49,10 @@
       border:2px solid #000;
       padding:4px;
       text-align:center;
+    }
+    thead th{
+      background:#f5f5f5;
+      font-weight:bold;
     }
     .puzzle-table img{
       width:100%;
@@ -92,7 +96,7 @@
   <div style="flex:1 1 100%;">
     <label>Operaciones (separadas por espacio):</label>
     <textarea id="opsInput"
-      placeholder="Ejemplo: 5+3 7+2 4+6 9+1 8+2 3+5 ..."></textarea>
+      placeholder="Ejemplo: 2+3 4+2 5+3 6+4 7+5 8+6 9+7 10+8 11+9 12+10 13+11 14+12"></textarea>
     <div class="small-note">
       Se admiten + - * /, paréntesis, x · : y decimales con coma o punto.
     </div>
@@ -181,15 +185,41 @@ function shufflePuzzle(pieces, results){
   }
 }
 
-// Igualar alturas de filas entre tabla de operaciones y puzle
+// Igualar alturas de filas entre tabla de operaciones y puzle (solo tbody)
 function syncRowHeights(opTable, puzzleTable){
-  const opRows = opTable.querySelectorAll('tr');
-  const puzzleRows = puzzleTable.querySelectorAll('tr');
+  const opBody = opTable.tBodies[0];
+  const puzzleBody = puzzleTable.tBodies[0];
+  if(!opBody || !puzzleBody) return;
+
+  const opRows = opBody.rows;
+  const puzzleRows = puzzleBody.rows;
   const len = Math.min(opRows.length, puzzleRows.length);
+
   for(let i=0; i<len; i++){
     const h = puzzleRows[i].getBoundingClientRect().height;
     opRows[i].style.height = h + 'px';
   }
+}
+
+// Espera a que carguen todas las imágenes del puzle y luego sincroniza alturas
+function syncWhenImagesReady(opTable, puzzleTable){
+  const imgs = puzzleTable.querySelectorAll('img');
+  let remaining = imgs.length;
+  if(remaining === 0){
+    syncRowHeights(opTable, puzzleTable);
+    return;
+  }
+  imgs.forEach(img=>{
+    if(img.complete){
+      remaining--;
+      if(remaining === 0) syncRowHeights(opTable, puzzleTable);
+    }else{
+      img.onload = ()=>{
+        remaining--;
+        if(remaining === 0) syncRowHeights(opTable, puzzleTable);
+      };
+    }
+  });
 }
 
 generateBtn.addEventListener('click', ()=>{
@@ -236,10 +266,13 @@ generateBtn.addEventListener('click', ()=>{
 
   // Tabla de operaciones
   const opTable = document.createElement('table');
-  const opHead = document.createElement('tr');
-  opHead.innerHTML = '<th colspan="'+cols+'">TALLER DE MATES - Operaciones</th>';
-  opTable.appendChild(opHead);
+  const opThead = document.createElement('thead');
+  const opHeadRow = document.createElement('tr');
+  opHeadRow.innerHTML = '<th colspan="'+cols+'">TALLER DE MATES - Operaciones</th>';
+  opThead.appendChild(opHeadRow);
+  opTable.appendChild(opThead);
 
+  const opTbody = document.createElement('tbody');
   let idx = 0;
   for(let r=0; r<rows; r++){
     const tr = document.createElement('tr');
@@ -248,16 +281,20 @@ generateBtn.addEventListener('click', ()=>{
       td.textContent = ops[idx++];
       tr.appendChild(td);
     }
-    opTable.appendChild(tr);
+    opTbody.appendChild(tr);
   }
+  opTable.appendChild(opTbody);
 
   // Tabla de puzle
   const puzzleTable = document.createElement('table');
   puzzleTable.className = 'puzzle-table';
-  const pHead = document.createElement('tr');
-  pHead.innerHTML = '<th colspan="'+cols+'">Puzle</th>';
-  puzzleTable.appendChild(pHead);
+  const pThead = document.createElement('thead');
+  const pHeadRow = document.createElement('tr');
+  pHeadRow.innerHTML = '<th colspan="'+cols+'">Puzle</th>';
+  pThead.appendChild(pHeadRow);
+  puzzleTable.appendChild(pThead);
 
+  const pTbody = document.createElement('tbody');
   idx = 0;
   for(let r=0; r<rows; r++){
     const tr = document.createElement('tr');
@@ -283,15 +320,16 @@ generateBtn.addEventListener('click', ()=>{
       tr.appendChild(td);
       idx++;
     }
-    puzzleTable.appendChild(tr);
+    pTbody.appendChild(tr);
   }
+  puzzleTable.appendChild(pTbody);
 
   sheet.appendChild(opTable);
   sheet.appendChild(puzzleTable);
   preview.appendChild(sheet);
 
-  // Sincronizar alturas de filas después de que el navegador calcule el layout
-  requestAnimationFrame(()=> syncRowHeights(opTable, puzzleTable));
+  // Sincronizar alturas de filas (después de cargar imágenes)
+  syncWhenImagesReady(opTable, puzzleTable);
 
   // --- HOJA 2: SOLUCIÓN (imagen completa + tabla de resultados) ---
   const solutionSheet = document.createElement('div');
@@ -308,10 +346,13 @@ generateBtn.addEventListener('click', ()=>{
 
   // columna derecha: tabla de resultados
   const solTable = document.createElement('table');
-  const header = document.createElement('tr');
-  header.innerHTML = '<th colspan="'+cols+'">SOLUCIÓN - Resultados</th>';
+  const header = document.createElement('thead');
+  const hRow = document.createElement('tr');
+  hRow.innerHTML = '<th colspan="'+cols+'">SOLUCIÓN - Resultados</th>';
+  header.appendChild(hRow);
   solTable.appendChild(header);
 
+  const solBody = document.createElement('tbody');
   let k = 0;
   for(let r=0; r<rows; r++){
     const tr = document.createElement('tr');
@@ -322,8 +363,9 @@ generateBtn.addEventListener('click', ()=>{
       td.style.fontWeight = "bold";
       tr.appendChild(td);
     }
-    solTable.appendChild(tr);
+    solBody.appendChild(tr);
   }
+  solTable.appendChild(solBody);
 
   solutionSheet.appendChild(fullImgContainer);
   solutionSheet.appendChild(solTable);
