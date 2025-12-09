@@ -36,7 +36,7 @@
     }
     .sheet{
       display:grid;
-      grid-template-columns:1.1fr 1fr;
+      grid-template-columns:1fr 1fr; /* MISMO ANCHO PARA OPERACIONES Y PUZLE */
       gap:10px;
       page-break-after:always;
     }
@@ -181,6 +181,17 @@ function shufflePuzzle(pieces, results){
   }
 }
 
+// Igualar alturas de filas entre tabla de operaciones y puzle
+function syncRowHeights(opTable, puzzleTable){
+  const opRows = opTable.querySelectorAll('tr');
+  const puzzleRows = puzzleTable.querySelectorAll('tr');
+  const len = Math.min(opRows.length, puzzleRows.length);
+  for(let i=0; i<len; i++){
+    const h = puzzleRows[i].getBoundingClientRect().height;
+    opRows[i].style.height = h + 'px';
+  }
+}
+
 generateBtn.addEventListener('click', ()=>{
   if(!loadedImage){
     alert("Primero selecciona una imagen.");
@@ -278,6 +289,9 @@ generateBtn.addEventListener('click', ()=>{
   sheet.appendChild(opTable);
   sheet.appendChild(puzzleTable);
   preview.appendChild(sheet);
+
+  // Sincronizar alturas de filas después de que el navegador calcule el layout
+  requestAnimationFrame(()=> syncRowHeights(opTable, puzzleTable));
 
   // --- HOJA 2: SOLUCIÓN (imagen completa + tabla de resultados) ---
   const solutionSheet = document.createElement('div');
