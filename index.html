@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <title>Puzles de Matemáticas</title>
+  <title>Aula Digital QR – Puzzles de Cálculo Mental</title>
   <style>
     body{
       font-family: Arial, sans-serif;
@@ -33,10 +33,11 @@
       margin-top:20px;
       border:1px solid #000;
       padding:10px;
+      background:white;
     }
     .sheet{
       display:grid;
-      grid-template-columns:1fr 1fr; /* mismo ancho para operaciones y puzle */
+      grid-template-columns:1fr 1fr; /* mismo ancho para operaciones y puzzle */
       gap:10px;
       page-break-after:always;
     }
@@ -66,6 +67,12 @@
     .btn-print{
       margin-left:10px;
     }
+    .brand{
+      font-size:0.85rem;
+      color:#666;
+      text-align:center;
+      margin-top:2px;
+    }
     @media print{
       body{ margin:0; }
       .config{ display:none; }
@@ -76,16 +83,17 @@
   </style>
 </head>
 <body>
-<h1>Puzles de Matemáticas</h1>
+<h1>Aula Digital QR – Puzzles de Cálculo Mental</h1>
+<div class="brand">Generador profesional de fichas de cálculo y puzzles para el aula</div>
 
 <div class="config">
   <div>
-    <label>Imagen del puzle:</label>
+    <label>Imagen del puzzle:</label>
     <input type="file" id="imgInput" accept="image/*">
   </div>
 
   <div>
-    <label>Tamaño:</label>
+    <label>Tamaño de cuadrícula:</label>
     <select id="sizeSelect">
       <option value="3x4">3 x 4 (12 piezas)</option>
       <option value="3x5">3 x 5 (15 piezas)</option>
@@ -98,17 +106,21 @@
     <textarea id="opsInput"
       placeholder="Ejemplo: 2+3 4+2 5+3 6+4 7+5 8+6 9+7 10+8 11+9 12+10 13+11 14+12"></textarea>
     <div class="small-note">
-      Se admiten + - * /, paréntesis, x · : y decimales con coma o punto.
+      El sistema admite + - * /, paréntesis, x · : y decimales con coma o punto.
     </div>
   </div>
 
   <div>
-    <button id="generateBtn">Generar ficha</button>
-    <button class="btn-print" onclick="window.print()">Imprimir (puzle + solución)</button>
+    <button id="generateBtn">Generar puzzle</button>
+    <button class="btn-print" onclick="window.print()">Imprimir (puzzle + solución)</button>
+    <button class="btn-print" id="pdfBtn">Descargar PDF (puzzle + solución)</button>
   </div>
 </div>
 
 <div id="preview"></div>
+
+<!-- Librería para generar PDF en el navegador -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
 
 <script>
 const imgInput   = document.getElementById('imgInput');
@@ -116,6 +128,7 @@ const sizeSelect = document.getElementById('sizeSelect');
 const opsInput   = document.getElementById('opsInput');
 const preview    = document.getElementById('preview');
 const generateBtn= document.getElementById('generateBtn');
+const pdfBtn     = document.getElementById('pdfBtn');
 
 let loadedImage = null;
 
@@ -128,7 +141,7 @@ imgInput.addEventListener('change', e=>{
     const img = new Image();
     img.onload = ()=>{
       loadedImage = img;
-      alert("Imagen cargada correctamente");
+      alert("Imagen del puzzle cargada correctamente");
     };
     img.src = ev.target.result;
   };
@@ -184,7 +197,7 @@ function shuffleArray(arr){
   }
 }
 
-// Aplica estilo "blanco con contorno negro" a los números
+// Estilo "número blanco con contorno negro"
 function styleNumber(div){
   div.style.fontSize = "32px";
   div.style.fontWeight = "bold";
@@ -193,12 +206,11 @@ function styleNumber(div){
   div.style.top = "50%";
   div.style.left = "50%";
   div.style.transform = "translate(-50%, -50%)";
-  // contorno negro con sombra
   div.style.textShadow =
     "-1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black, 1px 1px 2px black";
 }
 
-// Igualar alturas de filas entre tabla de operaciones y puzle (solo tbody)
+// Igualar alturas de filas entre tabla de operaciones y puzzle (solo tbody)
 function syncRowHeights(opTable, puzzleTable){
   const opBody = opTable.tBodies[0];
   const puzzleBody = puzzleTable.tBodies[0];
@@ -214,7 +226,7 @@ function syncRowHeights(opTable, puzzleTable){
   }
 }
 
-// Espera a que carguen todas las imágenes del puzle y luego sincroniza alturas
+// Espera a que carguen todas las imágenes del puzzle y luego sincroniza alturas
 function syncWhenImagesReady(opTable, puzzleTable){
   const imgs = puzzleTable.querySelectorAll('img');
   let remaining = imgs.length;
@@ -237,7 +249,7 @@ function syncWhenImagesReady(opTable, puzzleTable){
 
 generateBtn.addEventListener('click', ()=>{
   if(!loadedImage){
-    alert("Primero selecciona una imagen.");
+    alert("Primero selecciona una imagen para el puzzle.");
     return;
   }
 
@@ -246,14 +258,14 @@ generateBtn.addEventListener('click', ()=>{
 
   const opsRaw = opsInput.value.trim();
   if(!opsRaw){
-    alert("Escribe las operaciones.");
+    alert("Escribe las operaciones que quieres trabajar.");
     return;
   }
 
   const ops = opsRaw.split(/\s+/);
   if(ops.length !== expected){
     alert("Se necesitan exactamente " + expected +
-          " operaciones para un puzle " + rows + "x" + cols +
+          " operaciones para un puzzle " + rows + "x" + cols +
           ". Ahora hay " + ops.length + ".");
     return;
   }
@@ -263,7 +275,7 @@ generateBtn.addEventListener('click', ()=>{
   try{
     results = ops.map(computeOp);
   }catch(err){
-    alert("Error al calcular: " + err.message);
+    alert("Error al calcular una operación: " + err.message);
     return;
   }
 
@@ -280,13 +292,13 @@ generateBtn.addEventListener('click', ()=>{
     });
   }
 
-  // Versión mezclada para el puzle del alumno
+  // Versión mezclada para el puzzle del alumno
   const shuffled = cells.slice();
   shuffleArray(shuffled);
 
   preview.innerHTML = ""; // limpiar
 
-  // --- HOJA 1: FICHA DEL ALUMNO (operaciones + puzle mezclado) ---
+  // --- HOJA 1: FICHA DEL ALUMNO (operaciones + puzzle mezclado) ---
   const sheet = document.createElement('div');
   sheet.className = 'sheet';
 
@@ -294,7 +306,7 @@ generateBtn.addEventListener('click', ()=>{
   const opTable = document.createElement('table');
   const opThead = document.createElement('thead');
   const opHeadRow = document.createElement('tr');
-  opHeadRow.innerHTML = '<th colspan="'+cols+'">TALLER DE MATES - Operaciones</th>';
+  opHeadRow.innerHTML = '<th colspan="'+cols+'">Taller de cálculo mental – Operaciones</th>';
   opThead.appendChild(opHeadRow);
   opTable.appendChild(opThead);
 
@@ -312,12 +324,12 @@ generateBtn.addEventListener('click', ()=>{
   }
   opTable.appendChild(opTbody);
 
-  // Tabla de puzle MEZCLADA
+  // Tabla de puzzle MEZCLADA
   const puzzleTable = document.createElement('table');
   puzzleTable.className = 'puzzle-table';
   const pThead = document.createElement('thead');
   const pHeadRow = document.createElement('tr');
-  pHeadRow.innerHTML = '<th colspan="'+cols+'">Puzle</th>';
+  pHeadRow.innerHTML = '<th colspan="'+cols+'">Puzzle de Aula Digital QR</th>';
   pThead.appendChild(pHeadRow);
   puzzleTable.appendChild(pThead);
 
@@ -362,7 +374,7 @@ generateBtn.addEventListener('click', ()=>{
   solTable.className = 'puzzle-table';
   const sThead = document.createElement('thead');
   const sHeadRow = document.createElement('tr');
-  sHeadRow.innerHTML = '<th colspan="'+cols+'">SOLUCIÓN - Imagen armada</th>';
+  sHeadRow.innerHTML = '<th colspan="'+cols+'">Solución – Puzzle armado con resultados</th>';
   sThead.appendChild(sHeadRow);
   solTable.appendChild(sThead);
 
@@ -396,8 +408,26 @@ generateBtn.addEventListener('click', ()=>{
 
   const note = document.createElement('p');
   note.className = "small-note";
-  note.textContent = "Para imprimir, usa el menú del navegador: Archivo → Imprimir → Guardar como PDF.";
+  note.textContent = "Este documento ha sido generado con Aula Digital QR – Puzzles de Cálculo Mental.";
   preview.appendChild(note);
+});
+
+// Botón para generar PDF directo (puzzle + solución)
+pdfBtn.addEventListener('click', ()=>{
+  if(!preview.firstChild){
+    alert("Primero genera un puzzle antes de descargar el PDF.");
+    return;
+  }
+
+  const element = document.getElementById('preview');
+  const opt = {
+    margin:       10,
+    filename:     'AulaDigitalQR_Puzzle_Matematicas.pdf',
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2 },
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+  };
+  html2pdf().set(opt).from(element).save();
 });
 </script>
 </body>
