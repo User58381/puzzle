@@ -7,9 +7,17 @@
     body{
       font-family: Arial, sans-serif;
       margin: 20px;
+      background:#f0f0f0;
     }
     h1{
       text-align:center;
+      margin-bottom:4px;
+    }
+    .brand{
+      font-size:0.85rem;
+      color:#666;
+      text-align:center;
+      margin-bottom:12px;
     }
     .config{
       display:flex;
@@ -19,6 +27,7 @@
       border:1px solid #ccc;
       padding:1rem;
       border-radius:8px;
+      background:white;
     }
     .config label{
       display:block;
@@ -36,10 +45,8 @@
       background:white;
     }
     .sheet{
-      display:grid;
-      grid-template-columns:1fr 1fr; /* mismo ancho para operaciones y puzzle */
-      gap:10px;
       page-break-after:always;
+      margin-bottom:10px;
     }
     table{
       width:100%;
@@ -67,14 +74,8 @@
     .btn-print{
       margin-left:10px;
     }
-    .brand{
-      font-size:0.85rem;
-      color:#666;
-      text-align:center;
-      margin-top:2px;
-    }
     @media print{
-      body{ margin:0; }
+      body{ margin:0; background:white; }
       .config{ display:none; }
       #preview{ border:none; padding:0; }
       table td{ font-size:18px !important; }
@@ -84,7 +85,7 @@
 </head>
 <body>
 <h1>Aula Digital QR – Puzzles de Cálculo Mental</h1>
-<div class="brand">Generador profesional de fichas de cálculo y puzzles para el aula</div>
+<div class="brand">Generador profesional de fichas de cálculo mental y puzzles para el aula</div>
 
 <div class="config">
   <div>
@@ -210,43 +211,6 @@ function styleNumber(div){
     "-1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black, 1px 1px 2px black";
 }
 
-// Igualar alturas de filas entre tabla de operaciones y puzzle (solo tbody)
-function syncRowHeights(opTable, puzzleTable){
-  const opBody = opTable.tBodies[0];
-  const puzzleBody = puzzleTable.tBodies[0];
-  if(!opBody || !puzzleBody) return;
-
-  const opRows = opBody.rows;
-  const puzzleRows = puzzleBody.rows;
-  const len = Math.min(opRows.length, puzzleRows.length);
-
-  for(let i=0; i<len; i++){
-    const h = puzzleRows[i].getBoundingClientRect().height;
-    opRows[i].style.height = h + 'px';
-  }
-}
-
-// Espera a que carguen todas las imágenes del puzzle y luego sincroniza alturas
-function syncWhenImagesReady(opTable, puzzleTable){
-  const imgs = puzzleTable.querySelectorAll('img');
-  let remaining = imgs.length;
-  if(remaining === 0){
-    syncRowHeights(opTable, puzzleTable);
-    return;
-  }
-  imgs.forEach(img=>{
-    if(img.complete){
-      remaining--;
-      if(remaining === 0) syncRowHeights(opTable, puzzleTable);
-    }else{
-      img.onload = ()=>{
-        remaining--;
-        if(remaining === 0) syncRowHeights(opTable, puzzleTable);
-      };
-    }
-  });
-}
-
 generateBtn.addEventListener('click', ()=>{
   if(!loadedImage){
     alert("Primero selecciona una imagen para el puzzle.");
@@ -298,47 +262,45 @@ generateBtn.addEventListener('click', ()=>{
 
   preview.innerHTML = ""; // limpiar
 
-  // --- HOJA 1: FICHA DEL ALUMNO (operaciones + puzzle mezclado) ---
-  const sheet = document.createElement('div');
-  sheet.className = 'sheet';
+  // --- HOJA 1: FICHA DEL ALUMNO (tabla única: operaciones + puzzle) ---
+  const sheet1 = document.createElement('div');
+  sheet1.className = 'sheet';
 
-  // Tabla de operaciones (en orden original)
-  const opTable = document.createElement('table');
-  const opThead = document.createElement('thead');
-  const opHeadRow = document.createElement('tr');
-  opHeadRow.innerHTML = '<th colspan="'+cols+'">Taller de cálculo mental – Operaciones</th>';
-  opThead.appendChild(opHeadRow);
-  opTable.appendChild(opThead);
+  const mainTable = document.createElement('table');
 
-  const opTbody = document.createElement('tbody');
-  let idx = 0;
+  const thead = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  const thOps = document.createElement('th');
+  thOps.colSpan = cols;
+  thOps.textContent = "Taller de cálculo mental – Operaciones";
+
+  const thPuzzle = document.createElement('th');
+  thPuzzle.colSpan = cols;
+  thPuzzle.textContent = "Puzzle de Aula Digital QR";
+
+  headRow.appendChild(thOps);
+  headRow.appendChild(thPuzzle);
+  thead.appendChild(headRow);
+  mainTable.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  let idxShuffled = 0;
+  let idxCells    = 0;
+
   for(let r=0; r<rows; r++){
     const tr = document.createElement('tr');
+
+    // celdas de operaciones (orden original)
     for(let c=0; c<cols; c++){
       const td = document.createElement('td');
-      td.textContent = cells[idx].op;
+      td.textContent = cells[idxCells].op;
       tr.appendChild(td);
-      idx++;
+      idxCells++;
     }
-    opTbody.appendChild(tr);
-  }
-  opTable.appendChild(opTbody);
 
-  // Tabla de puzzle MEZCLADA
-  const puzzleTable = document.createElement('table');
-  puzzleTable.className = 'puzzle-table';
-  const pThead = document.createElement('thead');
-  const pHeadRow = document.createElement('tr');
-  pHeadRow.innerHTML = '<th colspan="'+cols+'">Puzzle de Aula Digital QR</th>';
-  pThead.appendChild(pHeadRow);
-  puzzleTable.appendChild(pThead);
-
-  const pTbody = document.createElement('tbody');
-  idx = 0;
-  for(let r=0; r<rows; r++){
-    const tr = document.createElement('tr');
+    // celdas de puzzle (mezcladas)
     for(let c=0; c<cols; c++){
-      const cell = shuffled[idx];
+      const cell = shuffled[idxShuffled];
       const td = document.createElement('td');
       td.style.position = "relative";
 
@@ -352,29 +314,29 @@ generateBtn.addEventListener('click', ()=>{
       td.appendChild(img);
       td.appendChild(num);
       tr.appendChild(td);
-      idx++;
+      idxShuffled++;
     }
-    pTbody.appendChild(tr);
+
+    tbody.appendChild(tr);
   }
-  puzzleTable.appendChild(pTbody);
 
-  sheet.appendChild(opTable);
-  sheet.appendChild(puzzleTable);
-  preview.appendChild(sheet);
-
-  // Sincronizar alturas de filas (después de cargar imágenes)
-  syncWhenImagesReady(opTable, puzzleTable);
+  mainTable.appendChild(tbody);
+  sheet1.appendChild(mainTable);
+  preview.appendChild(sheet1);
 
   // --- HOJA 2: SOLUCIÓN (imagen armada con números en su lugar) ---
-  const solutionSheet = document.createElement('div');
-  solutionSheet.className = 'sheet';
-  solutionSheet.style.gridTemplateColumns = '1fr'; // solo una columna, ancho completo
+  const sheet2 = document.createElement('div');
+  sheet2.className = 'sheet';
 
   const solTable = document.createElement('table');
   solTable.className = 'puzzle-table';
+
   const sThead = document.createElement('thead');
   const sHeadRow = document.createElement('tr');
-  sHeadRow.innerHTML = '<th colspan="'+cols+'">Solución – Puzzle armado con resultados</th>';
+  const sTh = document.createElement('th');
+  sTh.colSpan = cols;
+  sTh.textContent = "Solución – Puzzle armado con resultados";
+  sHeadRow.appendChild(sTh);
   sThead.appendChild(sHeadRow);
   solTable.appendChild(sThead);
 
@@ -383,7 +345,7 @@ generateBtn.addEventListener('click', ()=>{
   for(let r=0; r<rows; r++){
     const tr = document.createElement('tr');
     for(let c=0; c<cols; c++){
-      const cell = cells[k]; // SIN MEZCLAR: imagen armada correcta
+      const cell = cells[k]; // imagen en su lugar correcto
       const td = document.createElement('td');
       td.style.position = "relative";
 
@@ -402,13 +364,12 @@ generateBtn.addEventListener('click', ()=>{
     sTbody.appendChild(tr);
   }
   solTable.appendChild(sTbody);
-
-  solutionSheet.appendChild(solTable);
-  preview.appendChild(solutionSheet);
+  sheet2.appendChild(solTable);
+  preview.appendChild(sheet2);
 
   const note = document.createElement('p');
   note.className = "small-note";
-  note.textContent = "Este documento ha sido generado con Aula Digital QR – Puzzles de Cálculo Mental.";
+  note.textContent = "Documento generado con Aula Digital QR – Puzzles de Cálculo Mental.";
   preview.appendChild(note);
 });
 
