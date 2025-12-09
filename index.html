@@ -1,126 +1,261 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Canjeo de Estampas</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap');
-        body {
-            font-family: 'Comic Neue', cursive;
-            text-align: center;
-            background: url('./imagenes/fondo.jpg') no-repeat center center fixed;
-            background-size: cover;
-            color: white;
-        }
-        .sticker {
-            display: inline-block;
-            margin: 20px;
-            padding: 10px;
-            border-radius: 10px;
-            text-align: center;
-            position: relative;
-            background: rgba(255, 255, 255, 0.8);
-            padding: 15px;
-            animation: glowEffect 2s infinite alternate;
-        }
-        .sticker img {
-            width: 120px;
-            height: 120px;
-            border-radius: 10px;
-            animation: stickerGlow 1.5s infinite alternate;
-        }
-        .sticker button {
-            margin-top: 10px;
-            padding: 5px 10px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        .raro { border: 4px solid blue; background-color: #d0e1ff; }
-        .epico { border: 4px solid purple; background-color: #e1c0ff; }
-        .legendario { border: 4px solid orange; background-color: #ffdbac; }
-        .mitico { border: 4px solid red; background-color: #ffc0c0; }
-        .exclusivo { border: 4px solid gold; background-color: #fff7c0; }
-        .superexclusivo { border: 4px solid black; background-color: #ffcc00; animation: superGlow 1.5s infinite alternate; }
-
-        @keyframes glowEffect {
-            0% { box-shadow: 0 0 10px rgba(255, 255, 255, 0.3); }
-            100% { box-shadow: 0 0 30px rgba(255, 255, 255, 0.8); }
-        }
-
-        @keyframes stickerGlow {
-            0% { filter: brightness(1); }
-            100% { filter: brightness(1.5); }
-        }
-        
-        @keyframes superGlow {
-            0% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
-            100% { box-shadow: 0 0 30px rgba(255, 215, 0, 1); }
-        }
-    </style>
+  <meta charset="utf-8">
+  <title>Puzles de mates</title>
+  <style>
+    body{
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    h1{
+      text-align:center;
+    }
+    .config{
+      display:flex;
+      flex-wrap:wrap;
+      gap:1rem;
+      margin-bottom:1rem;
+      border:1px solid #ccc;
+      padding:1rem;
+      border-radius:8px;
+    }
+    .config label{
+      display:block;
+      font-size:0.9rem;
+      margin-bottom:0.25rem;
+    }
+    textarea{
+      width:100%;
+      min-height:60px;
+    }
+    #preview{
+      margin-top:20px;
+      border:1px solid #000;
+      padding:10px;
+    }
+    .sheet{
+      display:grid;
+      grid-template-columns:1.1fr 1fr;
+      gap:10px;
+      page-break-after:always;
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:12px;
+    }
+    th,td{
+      border:1px solid #000;
+      padding:4px;
+      text-align:center;
+    }
+    .puzzle-table img{
+      width:100%;
+      height:auto;
+      display:block;
+    }
+    .small-note{
+      font-size:0.8rem;
+      color:#555;
+    }
+    @media print{
+      body{ margin:0; }
+      .config{ display:none; }
+      #preview{ border:none; }
+    }
+  </style>
 </head>
 <body>
-    <h1>Canjeo de Estampas</h1>
-    <h2>Estampas del Día</h2>
-    <div id="stickerContainer"></div>
-    <script>
-        function obtenerEstampasDelDia() {
-            return [
-                { id: 1, nombre: "Taco Feliz", costo: 800, img: "./imagenes/taco_feliz.jpeg", rareza: "raro" },
-                { id: 2, nombre: "Pollito Amarillo", costo: 900, img: "./imagenes/pollito_amarillo.png", rareza: "epico" },
-                { id: 3, nombre: "Huevo Tierno", costo: 1000, img: "./imagenes/huevo_tierno.png", rareza: "legendario" },
-                { id: 4, nombre: "Gato Fresa", costo: 1100, img: "./imagenes/gato_fresa.png", rareza: "mitico" },
-                { id: 5, nombre: "Capibara Estrella", costo: 1200, img: "./imagenes/capibara_estrella.jpg", rareza: "exclusivo" },
-                { id: 6, nombre: "Aguacate Kawaii", costo: 1300, img: "./imagenes/aguacate_kawaii.jpg", rareza: "superexclusivo" }
-            ];
-        }
+<h1>Puzles de Matemáticas</h1>
 
-        function renderStickers() {
-            const container = document.getElementById("stickerContainer");
-            container.innerHTML = "";
-            let stickers = obtenerEstampasDelDia();
-            stickers.forEach(sticker => {
-                let div = document.createElement("div");
-                div.className = `sticker ${sticker.rareza}`;
-                div.innerHTML = `
-                    <img src="${sticker.img}" alt="${sticker.nombre}"><br>
-                    <strong>${sticker.nombre}</strong><br>
-                    <span style="font-size: 18px; color: black;">${sticker.rareza.toUpperCase()}</span><br>
-                    Costo: ${sticker.costo} puntos<br>
-                    <button onclick="canjear('${sticker.img}', ${sticker.costo})">Canjear</button>
-                `;
-                container.appendChild(div);
-            });
-        }
+<div class="config">
+  <div>
+    <label>Imagen del puzle:</label>
+    <input type="file" id="imgInput" accept="image/*">
+  </div>
 
-        function canjear(imagen, costo) {
-            let cantidadPuntos = prompt(`Ingrese la cantidad de puntos para canjear esta estampa (Costo: ${costo} puntos):`);
-            if (cantidadPuntos !== null && !isNaN(cantidadPuntos) && cantidadPuntos.trim() !== "") {
-                cantidadPuntos = parseInt(cantidadPuntos);
-                if (cantidadPuntos >= costo) {
-                    imprimir(imagen);
-                } else {
-                    alert(`Necesitas al menos ${costo} puntos para canjear esta estampa.`);
-                }
-            } else {
-                alert("Entrada no válida. Intente nuevamente.");
-            }
-        }
+  <div>
+    <label>Tamaño:</label>
+    <select id="sizeSelect">
+      <option value="3x4">3 x 4 (12 piezas)</option>
+      <option value="3x5">3 x 5 (15 piezas)</option>
+      <option value="4x5">4 x 5 (20 piezas)</option>
+    </select>
+  </div>
 
-        function imprimir(imagen) {
-            let ventana = window.open("", "_blank");
-            ventana.document.write("<html><head><title>Impresión de Estampas</title><style>");
-            ventana.document.write("@page { size: landscape; margin: 0; }"); // Ajuste para modo horizontal
-            ventana.document.write("body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }");
-            ventana.document.write("img { width: 100%; height: auto; max-height: 100vh; }");
-            ventana.document.write("</style></head><body>");
-            ventana.document.write(`<img src="${imagen}">`);
-            ventana.document.write("</body></html>");
-            ventana.document.close();
-            setTimeout(() => { ventana.print(); ventana.close(); }, 500);
-        }
+  <div style="flex:1 1 100%;">
+    <label>Operaciones (separadas por espacio):</label>
+    <textarea id="opsInput"
+      placeholder="Ejemplo: 100-18 100-76 25+3 7*8 (20+5)*2"></textarea>
+    <div class="small-note">
+      Se admiten + - * /, paréntesis, x · : y decimales con coma o punto.
+    </div>
+  </div>
 
-        renderStickers();
-    </script>
+  <button id="generateBtn">Generar ficha</button>
+</div>
+
+<div id="preview"></div>
+
+<script>
+const imgInput   = document.getElementById('imgInput');
+const sizeSelect = document.getElementById('sizeSelect');
+const opsInput   = document.getElementById('opsInput');
+const preview    = document.getElementById('preview');
+const generateBtn= document.getElementById('generateBtn');
+
+let loadedImage = null;
+
+// Cargar imagen en memoria
+imgInput.addEventListener('change', e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    const img = new Image();
+    img.onload = ()=>{ loadedImage = img; alert("Imagen cargada correctamente"); };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+// Normalizar y calcular una operación
+function computeOp(opStr){
+  let expr = opStr.trim();
+  // reemplazos
+  expr = expr.replace(/x|X|·/g, '*');
+  expr = expr.replace(/:/g, '/');
+  expr = expr.replace(/,/g, '.');
+
+  // pequeña protección: solo números, operadores y paréntesis
+  if(!/^[0-9+\-*/().\s]+$/.test(expr)){
+    throw new Error("Carácter no permitido en operación: " + opStr);
+  }
+
+  const fn = new Function("return ("+expr+")");
+  const val = fn();
+  return Math.round((val + Number.EPSILON) * 100) / 100; // 2 decimales
+}
+
+// Corta la imagen en piezas y devuelve array de dataURLs
+function sliceImage(img, rows, cols){
+  const tileWidth  = img.width / cols;
+  const tileHeight = img.height / rows;
+  const pieces = [];
+
+  const tempCanvas = document.createElement('canvas');
+  const ctx = tempCanvas.getContext('2d');
+  tempCanvas.width  = tileWidth;
+  tempCanvas.height = tileHeight;
+
+  for(let r=0; r<rows; r++){
+    for(let c=0; c<cols; c++){
+      ctx.clearRect(0,0,tileWidth,tileHeight);
+      ctx.drawImage(
+        img,
+        c*tileWidth, r*tileHeight, tileWidth, tileHeight,
+        0, 0, tileWidth, tileHeight
+      );
+      pieces.push(tempCanvas.toDataURL());
+    }
+  }
+  return pieces;
+}
+
+generateBtn.addEventListener('click', ()=>{
+  if(!loadedImage){
+    alert("Primero selecciona una imagen.");
+    return;
+  }
+
+  const [rows, cols] = sizeSelect.value.split('x').map(Number);
+  const expected = rows * cols;
+
+  const opsRaw = opsInput.value.trim();
+  if(!opsRaw){
+    alert("Escribe las operaciones.");
+    return;
+  }
+
+  const ops = opsRaw.split(/\s+/);
+  if(ops.length !== expected){
+    alert("Se necesitan exactamente " + expected +
+          " operaciones para un puzle " + rows + "x" + cols +
+          ". Ahora hay " + ops.length + ".");
+    return;
+  }
+
+  let results = [];
+  try{
+    results = ops.map(computeOp);
+  }catch(err){
+    alert("Error al calcular: " + err.message);
+    return;
+  }
+
+  const pieces = sliceImage(loadedImage, rows, cols);
+
+  preview.innerHTML = ""; // limpiar
+
+  const sheet = document.createElement('div');
+  sheet.className = 'sheet';
+
+  // Tabla de operaciones
+  const opTable = document.createElement('table');
+  const opHead = document.createElement('tr');
+  opHead.innerHTML = '<th colspan="'+cols+'">TALLER DE MATES - Operaciones</th>';
+  opTable.appendChild(opHead);
+
+  let idx = 0;
+  for(let r=0; r<rows; r++){
+    const tr = document.createElement('tr');
+    for(let c=0; c<cols; c++){
+      const td = document.createElement('td');
+      td.textContent = ops[idx++];
+      tr.appendChild(td);
+    }
+    opTable.appendChild(tr);
+  }
+
+  // Tabla de puzle
+  const puzzleTable = document.createElement('table');
+  puzzleTable.className = 'puzzle-table';
+  const pHead = document.createElement('tr');
+  pHead.innerHTML = '<th colspan="'+cols+'">Puzle</th>';
+  puzzleTable.appendChild(pHead);
+
+  idx = 0;
+  for(let r=0; r<rows; r++){
+    const tr = document.createElement('tr');
+    for(let c=0; c<cols; c++){
+      const td = document.createElement('td');
+      const img = document.createElement('img');
+      img.src = pieces[idx];
+      const num = document.createElement('div');
+      num.textContent = results[idx]; // número sobre la pieza
+      num.style.position = "relative";
+      num.style.marginTop = "-1.2em";
+      num.style.fontSize = "10px";
+      num.style.fontWeight = "bold";
+      num.style.textAlign = "center";
+      td.appendChild(img);
+      td.appendChild(num);
+      tr.appendChild(td);
+      idx++;
+    }
+    puzzleTable.appendChild(tr);
+  }
+
+  sheet.appendChild(opTable);
+  sheet.appendChild(puzzleTable);
+  preview.appendChild(sheet);
+
+  const note = document.createElement('p');
+  note.className = "small-note";
+  note.textContent = "Para imprimir, usa el menú del navegador: Archivo → Imprimir → Guardar como PDF.";
+  preview.appendChild(note);
+});
+</script>
 </body>
 </html>
