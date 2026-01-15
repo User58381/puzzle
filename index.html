@@ -151,13 +151,50 @@ imgInput.addEventListener('change', e=>{
   reader.readAsDataURL(file);
 });
 
+// Máximo común divisor para simplificar fracciones
+function gcd(a, b){
+  a = Math.abs(a);
+  b = Math.abs(b);
+  while (b !== 0){
+    const t = b;
+    b = a % b;
+    a = t;
+  }
+  return a;
+}
+
 // Normalizar y calcular una operación
+// Ahora devuelve fracciones simplificadas para expresiones tipo a/b + c/d o a/b - c/d.
 function computeOp(opStr){
   let expr = opStr.trim();
   expr = expr.replace(/x|X|·/g, '*');
   expr = expr.replace(/:/g, '/');
   expr = expr.replace(/,/g, '.');
 
+  // Intentar detectar fracción del tipo a/b +/- c/d
+  const fracPattern = /^(\d+)\s*\/\s*(\d+)\s*([+\-])\s*(\d+)\s*\/\s*(\d+)$/;
+  const m = expr.match(fracPattern);
+
+  if(m){
+    const a = parseInt(m[1], 10);
+    const b = parseInt(m[2], 10);
+    const sign = m[3];
+    const c = parseInt(m[4], 10);
+    const d = parseInt(m[5], 10);
+
+    // a/b ± c/d = (a*d ± c*b) / (b*d)
+    let num = a*d + (sign === '+' ? 1 : -1)*c*b;
+    let den = b*d;
+
+    // Simplificar fracción
+    const g = gcd(num, den);
+    num /= g;
+    den /= g;
+
+    return num + "/" + den;   // Devolvemos fracción como texto
+  }
+
+  // Si no es una suma/resta simple de fracciones, usar cálculo decimal como antes
   if(!/^[0-9+\-*/().\s]+$/.test(expr)){
     throw new Error("Carácter no permitido en operación: " + opStr);
   }
@@ -345,7 +382,7 @@ generateBtn.addEventListener('click', ()=>{
       img.src = cell.piece;
 
       const num = document.createElement('div');
-      num.textContent = cell.result;
+      num.textContent = cell.result;  // ahora muestra fracción
       styleNumber(num);
 
       td.appendChild(img);
@@ -390,7 +427,7 @@ generateBtn.addEventListener('click', ()=>{
       img.src = cell.piece;
 
       const num = document.createElement('div');
-      num.textContent = cell.result;
+      num.textContent = cell.result;  // fracción también en la solución
       styleNumber(num);
 
       td.appendChild(img);
