@@ -151,7 +151,7 @@ imgInput.addEventListener('change', e=>{
   reader.readAsDataURL(file);
 });
 
-// Máximo común divisor para simplificar fracciones
+// Máximo común divisor (por si luego quieres simplificar en otra versión)
 function gcd(a, b){
   a = Math.abs(a);
   b = Math.abs(b);
@@ -164,7 +164,10 @@ function gcd(a, b){
 }
 
 // Normalizar y calcular una operación
-// Ahora devuelve fracciones simplificadas para expresiones tipo a/b + c/d o a/b - c/d.
+// >>> Ahora NO simplifica fracciones y mantiene numerador / denominador <<<
+// a/b + c/b => (a+c)/b
+// a/b - c/b => (a-c)/b
+// a/b ± c/d => (a*d ± c*b) / (b*d)   (sin simplificar)
 function computeOp(opStr){
   let expr = opStr.trim();
   expr = expr.replace(/x|X|·/g, '*');
@@ -182,19 +185,22 @@ function computeOp(opStr){
     const c = parseInt(m[4], 10);
     const d = parseInt(m[5], 10);
 
-    // a/b ± c/d = (a*d ± c*b) / (b*d)
-    let num = a*d + (sign === '+' ? 1 : -1)*c*b;
-    let den = b*d;
+    let num, den;
 
-    // Simplificar fracción
-    const g = gcd(num, den);
-    num /= g;
-    den /= g;
+    if (b === d) {
+      // Mismo denominador: SOLO sumamos/restamos numeradores
+      num = (sign === '+') ? (a + c) : (a - c);
+      den = b;
+    } else {
+      // Distinto denominador: suma de fracciones sin simplificar
+      num = a*d + (sign === '+' ? 1 : -1)*c*b;
+      den = b*d;
+    }
 
-    return num + "/" + den;   // Devolvemos fracción como texto
+    return num + "/" + den;   // devolvemos fracción tal cual
   }
 
-  // Si no es una suma/resta simple de fracciones, usar cálculo decimal como antes
+  // Si no es una fracción de ese tipo, usamos cálculo decimal normal
   if(!/^[0-9+\-*/().\s]+$/.test(expr)){
     throw new Error("Carácter no permitido en operación: " + opStr);
   }
@@ -382,7 +388,7 @@ generateBtn.addEventListener('click', ()=>{
       img.src = cell.piece;
 
       const num = document.createElement('div');
-      num.textContent = cell.result;  // ahora muestra fracción
+      num.textContent = cell.result;  // fracción tal cual
       styleNumber(num);
 
       td.appendChild(img);
@@ -427,7 +433,7 @@ generateBtn.addEventListener('click', ()=>{
       img.src = cell.piece;
 
       const num = document.createElement('div');
-      num.textContent = cell.result;  // fracción también en la solución
+      num.textContent = cell.result;  // misma fracción
       styleNumber(num);
 
       td.appendChild(img);
@@ -462,7 +468,7 @@ pdfBtn.addEventListener('click', ()=>{
     image:        { type: 'jpeg', quality: 0.98 },
     html2canvas:  {
       scale: 2,
-      windowWidth: element.scrollWidth   // captura con el ancho real
+      windowWidth: element.scrollWidth
     },
     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
   };
